@@ -1,0 +1,71 @@
+{
+  "books": [
+    {
+      "id": "3e0e980b4bee6161",
+      "filename": "artificial_intelligence_and_machine_learning.pdf",
+      "title": "Artificial Intelligence And Machine Learning",
+      "author": "Dr. Stuart Russell & Dr. Peter Norvig",
+      "subject": "Artificial Intelligence",
+      "pages": 3,
+      "chapters": [
+        {
+          "title": "Chapter 1: Supervised Learning and Gradient Descent",
+          "chapter_number": 1,
+          "page": 1,
+          "level": 1
+        },
+        {
+          "title": "Chapter 2: Deep Neural Networks and Backpropagation",
+          "chapter_number": 2,
+          "page": 2,
+          "level": 1
+        },
+        {
+          "title": "Chapter 3: Generalization, Overfitting, and Regularization",
+          "chapter_number": 3,
+          "page": 3,
+          "level": 1
+        }
+      ],
+      "chunks": 6,
+      "status": "ready",
+      "checksum": "e23f3fd285195025cdb7cab40717f370a1ce4480e022eeff10155a8dcd047d71",
+      "chunking_version": 3,
+      "created_at": "2026-10-30T05:48:43.047201+00:00"
+    },
+    {
+      "id": "94d435b2ab9a25d6",
+      "filename": "data_structures_and_algorithms.pdf",
+      "title": "Data Structures And Algorithms",
+      "author": "Dr. Robert Sedgewick & Dr. Alan Turing",
+      "subject": "Computer Science",
+      "pages": 3,
+      "chapters": [
+        {
+          "title": "Chapter 1: Asymptotic Analysis and Big-O Notation",
+          "chapter_number": 1,
+          "page": 1,
+          "level": 1
+        },
+        {
+          "title": "Chapter 2: Trees and Balanced Search Trees",
+          "chapter_number": 2,
+          "page": 2,
+          "level": 1
+        },
+        {
+          "title": "Chapter 3: Graph Traversal and Shortest Paths",
+          "chapter_number": 3,
+          "page": 3,
+          "level": 1
+        }
+      ],
+      "chunks": 6,
+      "status": "ready",
+      "checksum": "59ee769ac1ec6e2d33f9b2f8b0348033e5285bc8141b9dbeede67680fa02fd43",
+      "chunking_version": 3,
+      "created_at": "2026-10-30T05:48:43.109672+00:00"
+    }
+  ],
+  "last_updated": "2026-10-30T05:48:43.109672+00:00"
+}
