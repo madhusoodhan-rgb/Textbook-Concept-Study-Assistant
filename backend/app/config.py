@@ -34,6 +34,9 @@ class Settings(BaseSettings):
             return Path(custom)
         if os.environ.get("VERCEL"):
             return Path("/tmp/data")
+        adjacent = Path(__file__).resolve().parents[1] / "data"
+        if adjacent.exists():
+            return adjacent
         return PROJECT_ROOT / "backend" / "data"
 
     @property
@@ -42,6 +45,9 @@ class Settings(BaseSettings):
         custom = os.environ.get("BOOKS_DIR")
         if custom:
             return Path(custom)
+        adjacent_books = Path(__file__).resolve().parents[1] / "data" / "books"
+        if adjacent_books.exists():
+            return adjacent_books
         bundled = PROJECT_ROOT / "backend" / "data" / "books"
         if bundled.exists():
             return bundled

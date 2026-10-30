@@ -38,12 +38,29 @@ Create a `.env` file in the project root or configure these variables in your ho
 ## 3. Backend Deployment (Render / Railway / Docker)
 
 ### Option A: Render
-1. Create a **New Web Service** connected to your repository.
-2. Set **Root Directory** to `backend`.
-3. Set **Runtime** to `Python 3`.
-4. Set **Build Command**: `pip install -r requirements.txt`
-5. Set **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-6. Under Environment Variables, add `GOOGLE_API_KEY`.
+
+#### Method 1: Automated Blueprint (Recommended)
+1. Go to your [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** -> **Blueprint**.
+3. Connect your repository `madhusoodhan-rgb/Textbook-Concept-Study-Assistant`.
+4. Render will automatically detect `render.yaml` and configure the service:
+   - Root directory: `backend`
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. (Optional) Provide `GOOGLE_API_KEY` in environment variables if using Gemini generative synthesis. If omitted, the backend runs in full local grounded RAG mode.
+6. Click **Apply**. Once deployed, copy your backend URL (e.g., `https://textbook-concept-study-assistant-backend.onrender.com`).
+
+#### Method 2: Manual Web Service
+1. In Render, click **New +** -> **Web Service**.
+2. Select your repository `madhusoodhan-rgb/Textbook-Concept-Study-Assistant`.
+3. Set **Root Directory** to `backend`.
+4. Set **Runtime** to `Python 3`.
+5. Set **Build Command**: `pip install -r requirements.txt`
+6. Set **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+7. Under Environment Variables:
+   - `PYTHON_VERSION`: `3.11.9`
+   - `GOOGLE_API_KEY`: *(Optional)* Your Gemini API key.
+8. Click **Deploy Web Service**.
 
 ### Option B: Docker
 A sample `Dockerfile` for the backend:
