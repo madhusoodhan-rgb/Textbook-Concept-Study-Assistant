@@ -66,7 +66,8 @@ export const StudyToolsModal: React.FC<StudyToolsModalProps> = ({
     { id: 'explain_simply', label: 'Explain Simply', icon: Lightbulb, desc: 'Intuitive analogies for tough concepts' },
   ];
 
-  const currentBook = books.find((b) => b.id === chosenBookId) || books[0];
+  const safeBooks = Array.isArray(books) ? books : [];
+  const currentBook = safeBooks.find((b) => b.id === chosenBookId) || safeBooks[0];
   const chapters = currentBook?.chapters || [];
 
   const handleGenerate = async () => {

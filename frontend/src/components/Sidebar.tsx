@@ -29,6 +29,8 @@ interface SidebarProps {
   onToggleTheme: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
+  isBackendOnline?: boolean;
+  onReconnectBackend?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -46,6 +48,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleTheme,
   isOpenMobile,
   onCloseMobile,
+  isBackendOnline = true,
+  onReconnectBackend,
 }) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -272,9 +276,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-950/40 text-[11px] text-slate-500">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>RAG Engine Online</span>
+          <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950/40 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span>{isBackendOnline ? 'RAG Engine Online' : 'Connecting to API...'}</span>
+            </div>
+            {!isBackendOnline && onReconnectBackend && (
+              <button
+                type="button"
+                onClick={onReconnectBackend}
+                className="text-blue-600 dark:text-blue-400 font-medium hover:underline text-[10px]"
+              >
+                Retry
+              </button>
+            )}
           </div>
         </div>
       </aside>

@@ -13,7 +13,31 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000,
 });
+
+// Interceptor to guard against HTML responses (e.g. from Vercel SPA rewrites)
+api.interceptors.response.use(
+  (response) => {
+    const rawContentType = response.headers['content-type'];
+    const contentType = (typeof rawContentType === 'string' ? rawContentType : '').toLowerCase();
+    const isHtmlString =
+      typeof response.data === 'string' &&
+      (contentType.includes('text/html') ||
+        response.data.trim().startsWith('<!doctype') ||
+        response.data.trim().startsWith('<html'));
+
+    if (isHtmlString) {
+      throw new Error(
+        `API endpoint '${response.config.url}' returned HTML instead of JSON. The backend server may be offline or unreachable.`
+      );
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 export const apiClient = {
   // Health
@@ -25,7 +49,10 @@ export const apiClient = {
   // Books
   getBooks: async (): Promise<BookListResponse> => {
     const response = await api.get('/api/books');
-    return response.data;
+    if (response.data && Array.isArray(response.data.books)) {
+      return response.data;
+    }
+    throw new Error('Invalid books response format from server.');
   },
 
   getBook: async (bookId: string): Promise<BookInfo> => {
@@ -70,7 +97,10 @@ export const apiClient = {
   // Conversations
   getConversations: async (): Promise<ConversationSummary[]> => {
     const response = await api.get('/api/conversations');
-    return response.data;
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
 
   createConversation: async (): Promise<ConversationDetail> => {

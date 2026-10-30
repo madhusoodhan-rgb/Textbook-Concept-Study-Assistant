@@ -8,17 +8,55 @@ import { TextbookLibraryModal } from './components/TextbookLibraryModal';
 import { StudyToolsModal } from './components/StudyToolsModal';
 import { BookmarksModal } from './components/BookmarksModal';
 
+// Default initial textbooks to guarantee immediate rendering even if backend is starting up
+const DEFAULT_FALLBACK_BOOKS: BookInfo[] = [
+  {
+    id: 'data_structures_and_algorithms',
+    filename: 'data_structures_and_algorithms.pdf',
+    title: 'Fundamentals of Data Structures & Algorithms',
+    author: 'Dr. Robert Sedgewick & Dr. Alan Turing',
+    subject: 'Computer Science',
+    pages: 3,
+    chapters: [
+      { title: 'Chapter 1: Asymptotic Analysis and Big-O Notation', chapter_number: 1, page: 1 },
+      { title: 'Chapter 2: Trees and Balanced Search Trees', chapter_number: 2, page: 2 },
+      { title: 'Chapter 3: Graph Traversal and Shortest Paths', chapter_number: 3, page: 3 },
+    ],
+    chunks: 6,
+    status: 'ready',
+  },
+  {
+    id: 'artificial_intelligence_and_machine_learning',
+    filename: 'artificial_intelligence_and_machine_learning.pdf',
+    title: 'Principles of Artificial Intelligence & Machine Learning',
+    author: 'Dr. Stuart Russell & Dr. Peter Norvig',
+    subject: 'Artificial Intelligence',
+    pages: 3,
+    chapters: [
+      { title: 'Chapter 1: Supervised Learning and Gradient Descent', chapter_number: 1, page: 1 },
+      { title: 'Chapter 2: Deep Neural Networks and Backpropagation', chapter_number: 2, page: 2 },
+      { title: 'Chapter 3: Generalization, Overfitting, and Regularization', chapter_number: 3, page: 3 },
+    ],
+    chunks: 6,
+    status: 'ready',
+  },
+];
+
 export const App: React.FC = () => {
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
-    return (
-      localStorage.getItem('theme') === 'dark' ||
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    );
+    try {
+      return (
+        localStorage.getItem('theme') === 'dark' ||
+        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      );
+    } catch {
+      return false;
+    }
   });
 
   // App data state
-  const [books, setBooks] = useState<BookInfo[]>([]);
+  const [books, setBooks] = useState<BookInfo[]>(DEFAULT_FALLBACK_BOOKS);
   const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -26,6 +64,7 @@ export const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [difficulty, setDifficulty] = useState<string>('standard');
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
 
   // Side panels & Modals
   const [isSourcePanelOpen, setIsSourcePanelOpen] = useState<boolean>(false);
@@ -47,12 +86,16 @@ export const App: React.FC = () => {
 
   // Apply dark mode to <html> element
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+    try {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    } catch {
+      // Ignore localStorage exceptions in restricted contexts
     }
   }, [isDark]);
 
@@ -65,18 +108,24 @@ export const App: React.FC = () => {
   const refreshBooks = async () => {
     try {
       const data = await apiClient.getBooks();
-      setBooks(data.books);
+      if (data && Array.isArray(data.books) && data.books.length > 0) {
+        setBooks(data.books);
+      }
+      setIsBackendOnline(true);
     } catch (err) {
-      console.error('Failed to load textbooks', err);
+      console.warn('[Textbook Assistant] Backend books API unavailable. Operating with local catalog:', err);
+      setIsBackendOnline(false);
     }
   };
 
   const refreshConversations = async () => {
     try {
       const data = await apiClient.getConversations();
-      setConversations(data);
+      if (Array.isArray(data)) {
+        setConversations(data);
+      }
     } catch (err) {
-      console.error('Failed to load conversations', err);
+      console.warn('[Textbook Assistant] Conversations API unavailable:', err);
     }
   };
 
@@ -85,14 +134,16 @@ export const App: React.FC = () => {
     setLoading(true);
     try {
       const detail = await apiClient.getConversation(id);
-      const convertedMessages: ChatMessage[] = detail.messages.map((m, idx) => ({
-        id: `${id}-${idx}`,
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-        citations: m.citations,
-        createdAt: m.created_at,
-      }));
-      setMessages(convertedMessages);
+      if (detail && Array.isArray(detail.messages)) {
+        const convertedMessages: ChatMessage[] = detail.messages.map((m, idx) => ({
+          id: `${id}-${idx}`,
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          citations: m.citations,
+          createdAt: m.created_at,
+        }));
+        setMessages(convertedMessages);
+      }
     } catch (err) {
       console.error('Failed to load conversation detail', err);
     } finally {
@@ -152,13 +203,14 @@ export const App: React.FC = () => {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: res.answer,
-        citations: res.citations,
+        citations: Array.isArray(res.citations) ? res.citations : [],
         createdAt: new Date().toISOString(),
         isEvidenceSufficient: res.is_evidence_sufficient,
         retrievalTrace: res.retrieval_trace,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      setIsBackendOnline(true);
 
       if (res.conversation_id && !activeConversationId) {
         setActiveConversationId(res.conversation_id);
@@ -170,10 +222,13 @@ export const App: React.FC = () => {
         setActiveCitation(res.citations[0]);
       }
     } catch (err: any) {
+      console.error('[Textbook Assistant] Chat request failed:', err);
+      setIsBackendOnline(false);
+
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        content: `Error: ${err.response?.data?.detail || 'Could not connect to the textbook assistant backend.'}`,
+        content: `### ⚠️ Backend Service Unreachable\n\nThe assistant could not retrieve textbook context from the backend server.\n\n- **If deploying:** Ensure your Python FastAPI backend (e.g. on Render, Railway, or VPS) is running and that \`VITE_API_URL\` is set to the live backend URL in your Vercel project environment settings.\n- **Error message:** \`${err.message || 'Network connection failed'}\``,
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -185,7 +240,6 @@ export const App: React.FC = () => {
   const handleRegenerate = () => {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
     if (lastUserMsg) {
-      // Remove last assistant message
       setMessages((prev) => prev.slice(0, -1));
       handleSendMessage(lastUserMsg.content);
     }
@@ -209,7 +263,11 @@ export const App: React.FC = () => {
       } else {
         updated = [...prev, citation];
       }
-      localStorage.setItem('bookmarked_citations', JSON.stringify(updated));
+      try {
+        localStorage.setItem('bookmarked_citations', JSON.stringify(updated));
+      } catch {
+        // Ignore
+      }
       return updated;
     });
   };
@@ -225,15 +283,14 @@ export const App: React.FC = () => {
     await refreshBooks();
   };
 
-  // Active citations for right panel from last assistant message
   const currentCitations =
-    [...messages].reverse().find((m) => m.role === 'assistant' && m.citations)?.citations || [];
+    [...messages].reverse().find((m) => m.role === 'assistant' && Array.isArray(m.citations))?.citations || [];
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Left Sidebar */}
       <Sidebar
-        conversations={conversations}
+        conversations={Array.isArray(conversations) ? conversations : []}
         activeConversationId={activeConversationId}
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
@@ -242,21 +299,23 @@ export const App: React.FC = () => {
         onOpenLibrary={() => setIsLibraryOpen(true)}
         onOpenStudyTools={() => setIsStudyToolsOpen(true)}
         onOpenBookmarks={() => setIsBookmarksOpen(true)}
-        bookCount={books.length}
+        bookCount={Array.isArray(books) ? books.length : 0}
         isDark={isDark}
         onToggleTheme={() => setIsDark(!isDark)}
         isOpenMobile={isMobileMenuOpen}
         onCloseMobile={() => setIsMobileMenuOpen(false)}
+        isBackendOnline={isBackendOnline}
+        onReconnectBackend={refreshBooks}
       />
 
       {/* Main Chat Area */}
       <ChatArea
-        messages={messages}
+        messages={Array.isArray(messages) ? messages : []}
         loading={loading}
         onSendMessage={handleSendMessage}
         onRegenerate={handleRegenerate}
         onSelectCitation={handleSelectCitation}
-        books={books}
+        books={Array.isArray(books) ? books : []}
         selectedBookIds={selectedBookIds}
         selectedChapter={selectedChapter}
         onClearChapter={() => setSelectedChapter(null)}
@@ -269,6 +328,7 @@ export const App: React.FC = () => {
         onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
         bookmarkedCitations={bookmarkedCitations}
         onToggleBookmark={handleToggleBookmark}
+        isBackendOnline={isBackendOnline}
       />
 
       {/* Right Source Panel */}
@@ -284,7 +344,7 @@ export const App: React.FC = () => {
       <TextbookLibraryModal
         isOpen={isLibraryOpen}
         onClose={() => setIsLibraryOpen(false)}
-        books={books}
+        books={Array.isArray(books) ? books : []}
         selectedBookIds={selectedBookIds}
         onToggleBookSelection={(id) => {
           setSelectedBookIds((prev) =>
@@ -303,7 +363,7 @@ export const App: React.FC = () => {
       <StudyToolsModal
         isOpen={isStudyToolsOpen}
         onClose={() => setIsStudyToolsOpen(false)}
-        books={books}
+        books={Array.isArray(books) ? books : []}
         selectedBookIds={selectedBookIds}
         selectedChapter={selectedChapter}
       />

@@ -50,11 +50,12 @@ export const TextbookLibraryModal: React.FC<TextbookLibraryModalProps> = ({
   if (!isOpen) return null;
 
   // Subjects extracted from books
-  const subjects = ['All', ...Array.from(new Set(books.map((b) => b.subject || 'General')))];
+  const safeBooks = Array.isArray(books) ? books : [];
+  const subjects = ['All', ...Array.from(new Set(safeBooks.map((b) => b.subject || 'General')))];
 
-  const filteredBooks = books.filter((b) => {
+  const filteredBooks = safeBooks.filter((b) => {
     const matchesSearch =
-      b.title.toLowerCase().includes(search.toLowerCase()) ||
+      (b.title || '').toLowerCase().includes(search.toLowerCase()) ||
       (b.author && b.author.toLowerCase().includes(search.toLowerCase()));
     const matchesSubject = selectedSubject === 'All' || b.subject === selectedSubject;
     return matchesSearch && matchesSubject;

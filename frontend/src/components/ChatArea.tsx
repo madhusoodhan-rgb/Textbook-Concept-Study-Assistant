@@ -35,6 +35,7 @@ interface ChatAreaProps {
   onOpenMobileMenu: () => void;
   bookmarkedCitations: Citation[];
   onToggleBookmark: (citation: Citation) => void;
+  isBackendOnline?: boolean;
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -56,6 +57,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onOpenMobileMenu,
   bookmarkedCitations,
   onToggleBookmark,
+  isBackendOnline = true,
 }) => {
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -151,6 +153,13 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                 <button onClick={onClearChapter} className="hover:text-rose-500">
                   <X className="w-3 h-3" />
                 </button>
+              </span>
+            )}
+
+            {!isBackendOnline && (
+              <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Offline Review Mode
               </span>
             )}
           </div>
